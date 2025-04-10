@@ -11,7 +11,7 @@ client = AzureOpenAI(
     azure_endpoint="https://cybersofttrainingday2.openai.azure.com"
 )
 
-st.title("🧠 Multi Modal Chatbot")
+st.title("Venkat's Chatbot")
 
 # Session State Initialization
 if "messages" not in st.session_state:
@@ -24,34 +24,36 @@ if "file_uploaded" not in st.session_state:
     st.session_state.file_uploaded = False
 
 # File Uploader (PDF and Excel only)
-uploaded_file = st.file_uploader(
+uploaded_files = st.file_uploader(
     "Upload PDF or Excel file",
-    type=["pdf", "xlsx"]
+    type=["pdf", "xlsx", "mp4", "xls"],
+    accept_multiple_files=True
 )
 
 file_text = ""
 
-if uploaded_file and not st.session_state.file_uploaded:
-    file_type = uploaded_file.type
+if uploaded_files and not st.session_state.file_uploaded:
+    for uploaded_file in uploaded_files:
+        file_type = uploaded_file.type
 
-    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-        tmp_file.write(uploaded_file.read())
-        tmp_path = tmp_file.name
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            tmp_file.write(uploaded_file.read())
+            tmp_path = tmp_file.name
 
-    if "pdf" in file_type:
-        with pdfplumber.open(tmp_path) as pdf:
-            file_text = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
+        if "pdf" in file_type:
+            with pdfplumber.open(tmp_path) as pdf:
+                file_text = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
 
-    elif "excel" in file_type or "spreadsheet" in file_type:
-        df = pd.read_excel(tmp_path)
-        file_text = df.to_markdown()
+        elif "excel" in file_type or "spreadsheet" in file_type:
+            df = pd.read_excel(tmp_path)
+            file_text = df.to_markdown()
 
-    if file_text:
-        st.session_state.messages.append({
-            "role": "user",
-            "content": f"I've uploaded a file. Please analyze the following content:\n{file_text}"
-        })
-        st.session_state.file_uploaded = True
+        if file_text:
+            st.session_state.messages.append({
+                "role": "user",
+                "content": f"I've uploaded a file. Please analyze the following content:\n{file_text}"
+            })
+            st.session_state.file_uploaded = True
 
 # Show Chat History
 for msg in st.session_state.messages[1:]:
